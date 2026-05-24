@@ -13,7 +13,7 @@
 | 1 | NK77 Bill Acceptor | 1 | 1,800–2,500 | รับ 20/50/100/500/1000 |
 | 2 | Hopper 24V (Coin Hopper) | 1 | 1,500–2,500 | ใส่เหรียญ 10 บาท |
 | 3 | LG-JT02 Photoelectric Sensor | 1 | 150–300 | ตรวจเหรียญที่ออก |
-| 4 | ESP32 DevKit V1 (38-pin) | 1 | 180–250 | MCU |
+| 4 | ESP32 DevKit V1 (38-pin) — **WROOM-32E** | 1 | 200–280 | MCU (เลือก 32E: Espressif official, ECO V3 silicon — เสถียรกว่า 32S สำหรับใช้ 24/7) |
 | 5 | PC เก่า + จอ 18" | 1 | (มีแล้ว) | Brain + Display |
 
 ### 1.2 Power supply

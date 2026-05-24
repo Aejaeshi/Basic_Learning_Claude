@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ตู้แลกเหรียญ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;900&family=Inter:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+    .font-num { font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+
+    /* Animation เหรียญหมุน */
+    @keyframes coin-spin {
+      0%, 100% { transform: rotateY(0deg); }
+      50%      { transform: rotateY(180deg); }
+    }
+    .coin-spin { animation: coin-spin 2s ease-in-out infinite; }
+
+    /* เหรียญร่วง */
+    @keyframes coin-drop {
+      0%   { transform: translateY(-80px) rotate(0deg);   opacity: 0; }
+      30%  { opacity: 1; }
+      100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+    }
+    .coin-drop { animation: coin-drop 0.9s ease-in forwards; }
+
+    /* Pulse breathing */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1);    opacity: 1;   }
+      50%      { transform: scale(1.05); opacity: 0.9; }
+    }
+    .breathe { animation: breathe 2s ease-in-out infinite; }
+
+    /* Status pill */
+    .status-pill { transition: all 200ms ease; }
+
+    /* State transition fade */
+    .scene { transition: opacity 200ms ease; }
+    .scene.hidden { display: none; }
+
+    /* Number flash on change */
+    @keyframes flash {
+      0%   { background-color: rgba(250, 204, 21, 0.3); }
+      100% { background-color: transparent; }
+    }
+    .flash { animation: flash 400ms ease-out; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-white select-none cursor-none overflow-hidden">
+
+  <!-- Header bar -->
+  <header class="px-8 py-4 flex justify-between items-center border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-yellow-400 grid place-items-center text-slate-900 font-black text-xl">฿</div>
+      <h1 class="text-2xl font-bold">ตู้แลกเหรียญ <span class="text-yellow-400">10 บาท</span></h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="conn-pill" class="status-pill px-3 py-1 rounded-full text-sm font-medium bg-slate-700 text-slate-300">
+        <span id="conn-dot" class="inline-block w-2 h-2 rounded-full bg-slate-500 mr-2"></span>
+        <span id="conn-text">เชื่อมต่อ...</span>
+      </div>
+      <div class="text-sm text-slate-400">
+        เหรียญในตู้: <span id="coin-count" class="font-num font-bold text-white">—</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main stage -->
+  <main class="px-8 py-8 h-[calc(100vh-80px)] flex items-center justify-center">
+
+    <!-- IDLE -->
+    <section data-scene="idle" class="scene text-center max-w-3xl">
+      <div class="text-9xl mb-8 breathe">💵</div>
+      <h2 class="text-6xl font-bold mb-4">ใส่ธนบัตรเพื่อแลกเหรียญ</h2>
+      <p class="text-2xl text-slate-300 mb-12">รับแบงค์ <span class="text-yellow-400 font-bold">20 / 50 / 100 / 500 / 1000</span></p>
+      <div class="flex justify-center gap-6 mb-12">
+        <div class="w-20 h-20 rounded-full bg-yellow-400 text-slate-900 grid place-items-center text-3xl font-black coin-spin">฿10</div>
+        <div class="w-20 h-20 rounded-full bg-yellow-400 text-slate-900 grid place-items-center text-3xl font-black coin-spin" style="animation-delay: 0.3s">฿10</div>
+        <div class="w-20 h-20 rounded-full bg-yellow-400 text-slate-900 grid place-items-center text-3xl font-black coin-spin" style="animation-delay: 0.6s">฿10</div>
+      </div>
+      <p class="text-slate-500 text-sm">1 บาท = 1 เหรียญ</p>
+    </section>
+
+    <!-- RECEIVING -->
+    <section data-scene="receiving" class="scene hidden text-center max-w-4xl w-full">
+      <div class="text-7xl mb-4">✅</div>
+      <h2 class="text-4xl text-slate-300 mb-8">ได้รับเงิน</h2>
+      <div class="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-3xl p-12 shadow-2xl mb-8">
+        <div class="text-slate-900 text-3xl font-medium mb-2">จำนวนเงิน</div>
+        <div id="bills-total" class="font-num text-9xl font-black text-slate-900 mb-2">0</div>
+        <div class="text-slate-700 text-2xl">บาท</div>
+      </div>
+      <div class="text-3xl text-slate-200">
+        จะได้เหรียญ: <span id="coins-expected" class="font-num font-bold text-yellow-400 text-5xl">0</span> เหรียญ
+      </div>
+      <p class="mt-8 text-slate-400 text-xl">⏳ ใส่เพิ่มได้ หรือรอประมวลผล...</p>
+    </section>
+
+    <!-- DISPENSING -->
+    <section data-scene="dispensing" class="scene hidden text-center max-w-4xl w-full">
+      <h2 class="text-5xl font-bold mb-12">💰 กำลังจ่ายเหรียญ</h2>
+
+      <div class="relative h-40 mb-12 grid place-items-center overflow-hidden">
+        <div id="coin-rain" class="absolute inset-0 flex justify-center items-start pt-2 gap-2"></div>
+      </div>
+
+      <div class="bg-slate-800 rounded-2xl p-8 shadow-xl">
+        <div class="flex justify-between items-end mb-4">
+          <div class="text-slate-400 text-xl">ความคืบหน้า</div>
+          <div class="font-num text-3xl font-bold">
+            <span id="coins-done" class="text-yellow-400">0</span>
+            <span class="text-slate-500"> / </span>
+            <span id="coins-target">0</span>
+          </div>
+        </div>
+        <div class="h-6 bg-slate-700 rounded-full overflow-hidden">
+          <div id="progress-bar" class="h-full bg-gradient-to-r from-yellow-400 to-amber-500 transition-all duration-200" style="width: 0%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPLETED -->
+    <section data-scene="completed" class="scene hidden text-center max-w-3xl">
+      <div class="text-9xl mb-8">🎉</div>
+      <h2 class="text-7xl font-black mb-4 text-yellow-400">ขอบคุณค่ะ</h2>
+      <p class="text-3xl text-slate-200 mb-2">
+        <span id="completed-bills" class="font-num font-bold">0</span> บาท
+        →
+        <span id="completed-coins" class="font-num font-bold text-yellow-400">0</span> เหรียญ
+      </p>
+      <p class="text-slate-400 mt-8">กรุณารับเหรียญด้านล่าง</p>
+    </section>
+
+    <!-- ERROR -->
+    <section data-scene="error" class="scene hidden text-center max-w-3xl">
+      <div class="text-9xl mb-8">⚠️</div>
+      <h2 class="text-6xl font-bold mb-4 text-red-400">ระบบขัดข้อง</h2>
+      <p class="text-2xl text-slate-300 mb-2">กรุณาแจ้งพนักงาน</p>
+      <p id="error-message" class="text-lg text-slate-500 mt-6 font-mono"></p>
+    </section>
+
+    <!-- DISABLED -->
+    <section data-scene="disabled" class="scene hidden text-center max-w-3xl">
+      <div class="text-9xl mb-8">🚫</div>
+      <h2 class="text-6xl font-bold mb-4 text-slate-400">ปิดให้บริการชั่วคราว</h2>
+      <p class="text-2xl text-slate-500">กรุณารอสักครู่</p>
+    </section>
+
+    <!-- OFFLINE -->
+    <section data-scene="offline" class="scene hidden text-center max-w-3xl">
+      <div class="text-9xl mb-8 breathe">📡</div>
+      <h2 class="text-6xl font-bold mb-4 text-slate-400">กำลังเชื่อมต่อระบบ</h2>
+      <p class="text-2xl text-slate-500">กรุณารอสักครู่...</p>
+    </section>
+
+  </main>
+
+  <script src="/customer/app.js"></script>
+</body>
+</html>

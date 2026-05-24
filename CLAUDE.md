@@ -44,7 +44,7 @@
 | Bill Acceptor | NK77 | 12V, pulse output (1 pulse = 10 บาท) |
 | Hopper | 24V Coin Hopper ทั่วไป | 24V, ~1.5–2A peak |
 | Coin Sensor | LG-JT02 | 12–24V, photoelectric (NPN/PNP — รอ confirm) |
-| MCU | ESP32 DevKit V1 (38-pin) | 3.3V |
+| MCU | ESP32 DevKit V1 (38-pin) — โมดูล **WROOM-32E** (ECO V3 silicon) | 3.3V |
 | PC | Core 2 Duo / Pentium, RAM ≤ 2GB | 100–240V AC |
 | Display | จอ 18" ธรรมดา (ไม่มี touch) | HDMI/VGA |
 | OS | Lubuntu 22.04 LXQt | — |
@@ -101,7 +101,7 @@ D:\Basic_Learning_Claude\
 - เหรียญที่ปล่อย: **10 บาทเท่านั้น** (mapping 1 pulse = 1 เหรียญ)
 - Bill denominations: 20, 50, 100, 500, 1000
 - การแจ้งเตือน: **Discord webhook** (ไม่ใช่ LINE — LINE Notify ปิดบริการ 31 มี.ค. 2025)
-- ESP32 board: **DevKit V1 (38-pin, WROOM-32)**
+- ESP32 board: **DevKit V1 (38-pin) + โมดูล WROOM-32E** (Espressif official, ECO V3 silicon — เสถียร 24/7 ดีกว่า WROOM-32S)
 - การสื่อสาร PC↔ESP32: **USB Serial** (ไม่ใช่ WiFi)
 - จอ: **18" ไม่มี touch** → UI เป็น display-only ลูกค้าไม่ต้องกด
 - DB: **SQLite** (ไฟล์เดียว ไม่ต้องตั้ง server)
