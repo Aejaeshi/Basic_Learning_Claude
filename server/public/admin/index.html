@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — ตู้แลกเหรียญ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+    .font-num { font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+    .state-badge { padding: 4px 12px; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
+    .state-idle      { background: #064e3b; color: #6ee7b7; }
+    .state-receiving { background: #78350f; color: #fcd34d; }
+    .state-dispensing { background: #1e3a8a; color: #93c5fd; }
+    .state-completed  { background: #064e3b; color: #6ee7b7; }
+    .state-error     { background: #7f1d1d; color: #fca5a5; }
+    .state-disabled  { background: #334155; color: #cbd5e1; }
+    .state-offline   { background: #4c1d95; color: #c4b5fd; }
+  </style>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100">
+
+  <header class="bg-slate-800 border-b border-slate-700 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-2 sm:gap-3 sticky top-0 z-10">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+      <div class="w-9 h-9 rounded-full bg-yellow-400 grid place-items-center text-slate-900 font-black shrink-0">฿</div>
+      <h1 class="text-base sm:text-xl font-bold truncate">Admin — ตู้แลกเหรียญ</h1>
+      <span id="state-badge" class="state-badge state-offline shrink-0">offline</span>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-4 text-sm shrink-0">
+      <span class="text-slate-400 hidden sm:inline">👤 <span id="username">—</span></span>
+      <button id="logout-btn" class="px-3 py-2 min-h-[44px] rounded bg-slate-700 hover:bg-slate-600 transition">Logout</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-6 space-y-6">
+
+    <!-- Top cards -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <div class="text-slate-400 text-sm mb-1">เหรียญในตู้</div>
+        <div class="font-num text-4xl font-bold text-yellow-400" id="coin-count">—</div>
+        <div class="text-xs text-slate-500 mt-1">threshold: <span id="threshold">—</span></div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <div class="text-slate-400 text-sm mb-1">รับเงิน (session)</div>
+        <div class="font-num text-4xl font-bold" id="bills-total">0</div>
+        <div class="text-xs text-slate-500 mt-1">บาท</div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <div class="text-slate-400 text-sm mb-1">จะจ่าย / จ่ายแล้ว</div>
+        <div class="font-num text-4xl font-bold">
+          <span id="coins-dispensed">0</span><span class="text-slate-500">/</span><span id="coins-expected">0</span>
+        </div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <div class="text-slate-400 text-sm mb-1">ESP32</div>
+        <div class="text-2xl font-bold flex items-center gap-2">
+          <span id="esp32-dot" class="w-3 h-3 rounded-full bg-red-500"></span>
+          <span id="esp32-text">disconnected</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error banner -->
+    <section id="error-banner" class="hidden bg-red-900/60 border border-red-700 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="text-red-200 font-bold">⚠️ เครื่องอยู่ในสถานะ ERROR</div>
+        <div id="error-message" class="text-red-300 text-sm mt-1"></div>
+      </div>
+      <button data-action="clear-error" class="px-4 py-3 min-h-[44px] rounded bg-red-700 hover:bg-red-600 text-white font-medium transition shrink-0">
+        Clear Error
+      </button>
+    </section>
+
+    <!-- Grid of controls -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Coin management -->
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <h2 class="text-lg font-bold mb-3">💰 จัดการเหรียญ</h2>
+
+        <!-- Custom -->
+        <div class="text-xs text-slate-400 mb-1">กำหนดจำนวนเอง (กด + หรือ − เพื่อเลือก, แล้วกด ยืนยัน)</div>
+        <div class="grid grid-cols-3 sm:flex gap-2">
+          <input type="number" inputmode="numeric" id="coin-custom" placeholder="จำนวน" class="col-span-3 sm:flex-1 px-3 py-3 min-h-[44px] rounded bg-slate-900 border border-slate-700 focus:border-yellow-400 focus:outline-none" />
+          <button id="coin-add-btn"      class="px-3 py-3 min-h-[44px] rounded bg-green-700 hover:bg-green-600 transition font-bold">+ เพิ่ม</button>
+          <button id="coin-subtract-btn" class="px-3 py-3 min-h-[44px] rounded bg-red-700 hover:bg-red-600 transition font-bold">− ลด</button>
+          <button id="coin-set-btn"      class="px-3 py-3 min-h-[44px] rounded bg-yellow-500 text-slate-900 hover:bg-yellow-400 transition font-bold">ยืนยัน</button>
+        </div>
+        <p id="coin-preview" class="text-sm text-yellow-400 mt-2 h-5 font-num"></p>
+        <p class="text-xs text-slate-500 mt-1">⚠️ การลบเหรียญทุกครั้งจะถูก log เพื่อ audit</p>
+      </div>
+
+      <!-- Inhibit toggles (per denom switches) -->
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <h2 class="text-lg font-bold mb-3">💵 รับธนบัตรแต่ละชนิด</h2>
+        <div class="space-y-3" id="inhibit-toggles">
+          <!-- generated by JS -->
+        </div>
+        <p class="text-xs text-slate-500 mt-3">เขียว = เปิดรับ / แดง = ปิดรับโดย admin (ระบบ auto ปิดแบงค์ใหญ่เมื่อเหรียญน้อยจะไม่แสดงที่นี่)</p>
+      </div>
+
+      <!-- Settings -->
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <h2 class="text-lg font-bold mb-3">⚙️ ตั้งค่า</h2>
+        <label class="block text-sm text-slate-400 mb-1">Low coin threshold (แจ้งเตือนเมื่อเหรียญ ≤ นี้)</label>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="number" inputmode="numeric" id="threshold-input" class="w-full sm:flex-1 px-3 py-3 min-h-[44px] rounded bg-slate-900 border border-slate-700 focus:border-yellow-400 focus:outline-none" />
+          <button id="threshold-save" class="px-4 py-3 min-h-[44px] rounded bg-yellow-500 text-slate-900 font-bold hover:bg-yellow-400 transition">Save</button>
+        </div>
+      </div>
+
+      <!-- Power / test -->
+      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+        <h2 class="text-lg font-bold mb-3">🔧 ทดสอบ / ควบคุม</h2>
+        <div class="space-y-4">
+
+          <!-- Test dispense -->
+          <div>
+            <label class="block text-sm text-slate-300 font-medium mb-1">Test dispense (1-10 เหรียญ)</label>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="number" inputmode="numeric" id="test-coins" min="1" max="10" value="1" class="w-full sm:w-24 px-3 py-3 min-h-[44px] rounded bg-slate-900 border border-slate-700 focus:border-yellow-400 focus:outline-none" />
+              <button id="test-dispense-btn" class="flex-1 py-3 min-h-[44px] rounded bg-blue-700 hover:bg-blue-600 transition font-medium">Dispense</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              สั่งปล่อยเหรียญทันที <span class="text-slate-400">(bypass การรับธนบัตร)</span><br>
+              ใช้ตอน: ทดสอบ hopper หลังติดตั้ง · calibrate sensor · เคลียร์เหรียญค้างหลัง jam<br>
+              <span class="text-yellow-500/80">⚠️ เหรียญในตู้ถูกหักจริงและบันทึก audit log</span>
+            </p>
+          </div>
+
+          <div class="border-t border-slate-700"></div>
+
+          <!-- Master disable -->
+          <div>
+            <label class="block text-sm text-slate-300 font-medium mb-1">ปิด/เปิดเครื่องทั้งหมด</label>
+            <button id="disable-btn" class="w-full py-3 min-h-[44px] rounded bg-slate-700 hover:bg-slate-600 transition font-medium">
+              <span id="disable-btn-text">⏸ ปิดเครื่องชั่วคราว</span>
+            </button>
+            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              ปิดทั้ง NK77 + Hopper พร้อมกัน <span class="text-slate-400">(state → DISABLED, จำสถานะแม้รีสตาร์ท)</span><br>
+              ใช้ตอน: เติมเหรียญ · เก็บเงิน · maintenance · ได้ยินเสียงผิดปกติ<br>
+              <span class="text-slate-400">ต่างจาก "รับธนบัตรแต่ละชนิด" (ฝั่งซ้าย) ที่ปิดแค่บางแบงค์ แต่เครื่องยังเดินอยู่</span>
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Transactions -->
+    <section class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+      <h2 class="text-lg font-bold mb-3">📜 Transactions ล่าสุด</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-700">
+              <th class="py-2 px-2">เวลา</th>
+              <th class="py-2 px-2 text-right">รับ (฿)</th>
+              <th class="py-2 px-2 text-right">เหรียญ</th>
+              <th class="py-2 px-2">สถานะ</th>
+              <th class="py-2 px-2">Error</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-body" class="font-num"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Events log -->
+    <section class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+      <h2 class="text-lg font-bold mb-3">📋 Event log (100 ล่าสุด)</h2>
+      <div class="overflow-x-auto max-h-96 overflow-y-auto">
+        <table class="w-full text-xs">
+          <thead class="sticky top-0 bg-slate-800">
+            <tr class="text-left text-slate-400 border-b border-slate-700">
+              <th class="py-2 px-2 w-44">เวลา</th>
+              <th class="py-2 px-2 w-16">Level</th>
+              <th class="py-2 px-2 w-20">Source</th>
+              <th class="py-2 px-2">Message</th>
+            </tr>
+          </thead>
+          <tbody id="events-body" class="font-mono"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/admin/app.js"></script>
+</body>
+</html>

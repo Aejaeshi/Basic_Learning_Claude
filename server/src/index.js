@@ -7,6 +7,8 @@ import { createEsp32 } from './esp32/index.js';
 import { Machine } from './machine.js';
 import { attachWebSocket } from './ws.js';
 import { createDevRouter } from './routes/dev.js';
+import { createAdminRouter } from './routes/admin.js';
+import { sessionMiddleware } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -38,9 +40,15 @@ machine.on('low_coin', ({ remaining, threshold }) => {
 // ===== Express app =====
 const app = express();
 app.use(express.json());
+app.use(sessionMiddleware);
 
-// Static files: หน้าจอลูกค้า + (เร็วๆ นี้) admin
+// Trust proxy ถ้าอยู่หลัง reverse proxy (เช่น nginx) — สำคัญสำหรับ rate limit ตาม IP
+// app.set('trust proxy', 1);
+
+// Static files: หน้าจอลูกค้า + admin (login page เปิดให้ทุกคนเข้า, ที่อื่นมี auth)
 app.use('/customer', express.static(path.join(PUBLIC_DIR, 'customer')));
+app.use('/admin/app.js', express.static(path.join(PUBLIC_DIR, 'admin', 'app.js')));
+app.use('/admin', createAdminRouter(machine, esp32));
 app.get('/', (req, res) => res.redirect('/customer/'));
 
 app.get('/health', (req, res) => {
