@@ -237,6 +237,14 @@
     } catch (e) { notify(e.message, false); }
   }
 
+  async function testDiscord() {
+    try {
+      const { ok } = await api('/admin/api/test-discord', { method: 'POST' });
+      alert(ok ? '✅ ส่งสำเร็จ — เช็ค Discord channel ดูนะ' : '⚠️ ส่งไม่สำเร็จ — ดู event log');
+      refreshEvents();
+    } catch (e) { notify(e.message, false); }
+  }
+
   async function saveThreshold() {
     const v = Number(els.thresholdInput.value);
     if (!Number.isFinite(v) || v < 0) return notify('threshold ต้องเป็นตัวเลข ≥ 0', false);
@@ -304,6 +312,7 @@
     testDispense(n);
   });
   document.getElementById('threshold-save').addEventListener('click', saveThreshold);
+  document.getElementById('test-discord-btn').addEventListener('click', testDiscord);
   document.getElementById('logout-btn').addEventListener('click', logout);
 
   // ===== WebSocket for live state (reuse same /ws) =====

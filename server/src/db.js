@@ -110,4 +110,22 @@ export const transactions = {
   findInProgress() {
     return db.prepare(`SELECT * FROM transactions WHERE status = 'in_progress'`).all();
   },
+  // สรุปยอดในช่วงเวลา [from, to) — ใช้ส่ง Discord daily summary
+  summary(fromTs, toTs) {
+    const row = db.prepare(`
+      SELECT
+        COUNT(*)                                                                          AS totalTxns,
+        COALESCE(SUM(CASE WHEN status='completed' THEN bills_total END), 0)               AS totalBills,
+        COALESCE(SUM(CASE WHEN status='completed' THEN coins_dispensed END), 0)           AS totalCoins,
+        COALESCE(SUM(CASE WHEN status IN ('jammed','aborted','power_loss_recovered') THEN 1 END), 0) AS errors
+      FROM transactions
+      WHERE started_at >= ? AND started_at < ?
+    `).get(fromTs, toTs);
+    return {
+      totalTxns:  row.totalTxns,
+      totalBills: row.totalBills,
+      totalCoins: row.totalCoins,
+      errors:     row.errors,
+    };
+  },
 };

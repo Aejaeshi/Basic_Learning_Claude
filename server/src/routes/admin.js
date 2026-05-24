@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { requireAuth, loginRateLimit, verifyCredentials } from '../auth.js';
 import { config } from '../config.js';
 import { coins, settings, events, transactions } from '../db.js';
+import { discord } from '../discord.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ADMIN_DIR = path.join(__dirname, '..', '..', 'public', 'admin');
@@ -24,6 +25,7 @@ const ADMIN_DIR = path.join(__dirname, '..', '..', 'public', 'admin');
  *   POST /admin/api/disable  body: { disabled: true }
  *   POST /admin/api/clear-error
  *   POST /admin/api/test-dispense  body: { coins: 1 }
+ *   POST /admin/api/test-discord   ส่ง test message ไป Discord webhook
  *   POST /admin/api/settings body: { low_coin_threshold: 100 }
  *   GET  /admin/api/transactions?limit=50
  *   GET  /admin/api/events?limit=100
@@ -162,6 +164,17 @@ export function createAdminRouter(machine, esp32) {
     });
     machine._emitStateChange();
     res.json({ ok: true, updated: updates });
+  });
+
+  router.post('/api/test-discord', async (req, res) => {
+    if (!discord.enabled) {
+      return res.status(400).json({ error: 'DISCORD_WEBHOOK_URL ยังไม่ได้ตั้งใน .env' });
+    }
+    const ok = await discord.test();
+    events.log('info', 'admin', 'discord_test', {
+      ok, by: req.session.admin.username,
+    });
+    res.json({ ok });
   });
 
   router.get('/api/transactions', (req, res) => {

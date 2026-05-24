@@ -104,10 +104,22 @@
       <!-- Settings -->
       <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
         <h2 class="text-lg font-bold mb-3">⚙️ ตั้งค่า</h2>
+
         <label class="block text-sm text-slate-400 mb-1">Low coin threshold (แจ้งเตือนเมื่อเหรียญ ≤ นี้)</label>
-        <div class="flex flex-col sm:flex-row gap-2">
+        <div class="flex flex-col sm:flex-row gap-2 mb-4">
           <input type="number" inputmode="numeric" id="threshold-input" class="w-full sm:flex-1 px-3 py-3 min-h-[44px] rounded bg-slate-900 border border-slate-700 focus:border-yellow-400 focus:outline-none" />
           <button id="threshold-save" class="px-4 py-3 min-h-[44px] rounded bg-yellow-500 text-slate-900 font-bold hover:bg-yellow-400 transition">Save</button>
+        </div>
+
+        <div class="border-t border-slate-700 pt-4">
+          <label class="block text-sm text-slate-300 font-medium mb-1">Discord webhook</label>
+          <button id="test-discord-btn" class="w-full py-3 min-h-[44px] rounded bg-indigo-700 hover:bg-indigo-600 transition font-medium">
+            🔔 ส่ง Test Message
+          </button>
+          <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            ทดสอบว่า webhook ใน <code class="text-slate-400">.env</code> ทำงานถูก<br>
+            <span class="text-slate-400">การแจ้งเตือนจริง: เหรียญใกล้หมด · เครื่อง error · ESP32 หลุด · สรุปยอดรายวัน</span>
+          </p>
         </div>
       </div>
 

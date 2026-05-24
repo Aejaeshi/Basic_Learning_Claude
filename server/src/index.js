@@ -9,6 +9,7 @@ import { attachWebSocket } from './ws.js';
 import { createDevRouter } from './routes/dev.js';
 import { createAdminRouter } from './routes/admin.js';
 import { sessionMiddleware } from './auth.js';
+import { discord } from './discord.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -29,13 +30,52 @@ if (stale.length > 0) {
 const esp32 = createEsp32();
 const machine = new Machine(esp32);
 
-esp32.on('connected', () => events.log('info', 'esp32', 'connected'));
-esp32.on('disconnected', () => events.log('warn', 'esp32', 'disconnected'));
+esp32.on('connected', () => {
+  events.log('info', 'esp32', 'connected');
+  discord.notifyEsp32(true);
+});
+esp32.on('disconnected', () => {
+  events.log('warn', 'esp32', 'disconnected');
+  discord.notifyEsp32(false);
+});
 
 machine.on('low_coin', ({ remaining, threshold }) => {
   console.log(`⚠️  Low coin: ${remaining} (threshold ${threshold})`);
-  // TODO: Discord webhook ใน Phase ถัดไป
+  discord.notifyLowCoin({ remaining, threshold });
 });
+
+machine.on('error_occurred', ({ message }) => {
+  console.error(`🚨 Machine error: ${message}`);
+  discord.notifyError({ message });
+});
+
+// ===== Daily summary scheduler =====
+// เช็คทุก 1 นาที — ถึงชั่วโมงที่ตั้งไว้ + ยังไม่ส่งวันนี้ → ยิง summary แล้ว mark วันที่ลง settings
+async function maybeSendDailySummary() {
+  const now = new Date();
+  if (now.getHours() !== config.discord.dailySummaryHour) return;
+  const today = now.toISOString().slice(0, 10);   // YYYY-MM-DD
+  if (settings.get('discord_last_summary_date') === today) return;
+
+  const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay   = new Date(now); endOfDay.setHours(23, 59, 59, 999);
+  const s = transactions.summary(startOfDay.getTime(), endOfDay.getTime() + 1);
+  const ok = await discord.notifyDailySummary({
+    date: today,
+    currentCoins: coins.current(),
+    ...s,
+  });
+  if (ok) {
+    settings.set('discord_last_summary_date', today);
+    events.log('info', 'discord', 'daily_summary_sent', { date: today, ...s });
+  }
+}
+if (discord.enabled) {
+  setInterval(maybeSendDailySummary, 60_000);
+  console.log(`📣 Discord webhook enabled — daily summary at ${config.discord.dailySummaryHour}:00`);
+} else {
+  console.log('📣 Discord webhook disabled (DISCORD_WEBHOOK_URL ว่าง)');
+}
 
 // ===== Express app =====
 const app = express();
