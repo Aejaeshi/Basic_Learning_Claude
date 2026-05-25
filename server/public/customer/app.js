@@ -19,6 +19,8 @@
     completedCoins: document.getElementById('completed-coins'),
     errorMessage: document.getElementById('error-message'),
     coinRain: document.getElementById('coin-rain'),
+    acceptedDenoms: document.getElementById('accepted-denoms'),
+    machineLabel: document.getElementById('machine-label'),
   };
 
   let currentScene = null;
@@ -60,10 +62,24 @@
   }
 
   function renderState(s) {
+    // Machine label (header subtitle + page title)
+    if (s.machineInfo && els.machineLabel) {
+      const label = `${s.machineInfo.branch} / ${s.machineInfo.name}`;
+      els.machineLabel.textContent = label;
+      document.title = `ตู้แลกเหรียญ — ${label}`;
+    }
+
     // Always-on widgets
     if (els.coinCount.textContent !== String(s.coinCount)) {
       els.coinCount.textContent = s.coinCount;
       flash(els.coinCount);
+    }
+
+    // รายการแบงค์ที่รับ — auto-hide แบงค์ที่ admin ปิด / เหรียญไม่พอ
+    if (Array.isArray(s.acceptedDenoms)) {
+      els.acceptedDenoms.textContent = s.acceptedDenoms.length
+        ? s.acceptedDenoms.join(' / ')
+        : '— ปิดรับชั่วคราว —';
     }
 
     // Connection

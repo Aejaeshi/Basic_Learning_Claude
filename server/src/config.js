@@ -9,6 +9,12 @@ export const config = {
   port: num(process.env.PORT, 8080),
   isProduction: process.env.NODE_ENV === 'production',
 
+  // ตัวตนของตู้เครื่องนี้ — แสดงบน UI + ขึ้น Discord embed
+  machine: {
+    name:   process.env.MACHINE_NAME || 'machine-01',
+    branch: process.env.BRANCH_NAME  || 'default',
+  },
+
   esp32: {
     mode: process.env.ESP32_MODE || 'mock',
     port: process.env.ESP32_PORT || '/dev/ttyUSB0',

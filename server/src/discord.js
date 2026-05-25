@@ -62,13 +62,18 @@ function shouldSkip(key) {
   return false;
 }
 
+// ใช้ตอนหลายตู้: prefix `[สาขา / ตู้]` ทุก embed
+// + footer ระบุชื่อตู้ ให้คน on-call รู้ว่าต้องไปไหน
+const PREFIX = `[${config.machine.branch} / ${config.machine.name}]`;
+const FOOTER = `ตู้แลกเหรียญ • ${config.machine.branch} • ${config.machine.name}`;
+
 function embedBase(title, description, color) {
   return {
-    title,
+    title: `${PREFIX} ${title}`,
     description,
     color,
     timestamp: new Date().toISOString(),
-    footer: { text: 'ตู้แลกเหรียญ' },
+    footer: { text: FOOTER },
   };
 }
 
@@ -127,11 +132,11 @@ export const discord = {
     ];
     return postWebhook({
       embeds: [{
-        title: `📊 สรุปยอดวันที่ ${s.date}`,
+        title: `${PREFIX} 📊 สรุปยอดวันที่ ${s.date}`,
         color: COLOR.INFO,
         fields,
         timestamp: new Date().toISOString(),
-        footer: { text: 'ตู้แลกเหรียญ' },
+        footer: { text: FOOTER },
       }],
     });
   },

@@ -52,7 +52,10 @@ export class Machine extends EventEmitter {
   // ===== Public API =====
 
   getState() {
+    const inhibited = new Set(this._computeInhibited());
+    const acceptedDenoms = config.business.validDenoms.filter(d => !inhibited.has(d));
     return {
+      machineInfo: { ...config.machine },   // { name, branch } — ติดทุก state broadcast
       state: this.state,
       billsTotal: this.billsTotal,
       coinsExpected: this.coinsExpected,
@@ -61,6 +64,7 @@ export class Machine extends EventEmitter {
       lowCoinThreshold: settings.getNumber('low_coin_threshold', 100),
       error: this.errorMessage,
       esp32Connected: this.esp32.connected,
+      acceptedDenoms,   // denom ที่ NK77 รับอยู่ตอนนี้ (ลูกค้าเห็น)
     };
   }
 
@@ -237,7 +241,9 @@ export class Machine extends EventEmitter {
     this._applyInhibits();
   }
 
-  _applyInhibits() {
+  // คำนวณ denom ที่ "ถูก inhibit" — admin ปิดเอง + auto-ปิดแบงค์ใหญ่เมื่อเหรียญน้อย
+  // ใช้ทั้งใน _applyInhibits (ส่งไป ESP32) และ getState (ส่งให้ลูกค้าดู)
+  _computeInhibited() {
     const available = coins.current();
     const adminDisabled = config.business.validDenoms.filter(d =>
       settings.getBool(`inhibit_${d}`)
@@ -245,8 +251,11 @@ export class Machine extends EventEmitter {
     const tooBig = config.business.validDenoms.filter(d =>
       Math.floor(d / config.business.coinValueBaht) > available
     );
-    const inhibited = [...new Set([...adminDisabled, ...tooBig])];
-    this._sendCmd('inhibit', { denoms: inhibited });
+    return [...new Set([...adminDisabled, ...tooBig])];
+  }
+
+  _applyInhibits() {
+    this._sendCmd('inhibit', { denoms: this._computeInhibited() });
   }
 
   _reset() {

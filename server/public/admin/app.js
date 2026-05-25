@@ -25,6 +25,7 @@
     coinAddBtn:      document.getElementById('coin-add-btn'),
     coinSubtractBtn: document.getElementById('coin-subtract-btn'),
     testCoins:    document.getElementById('test-coins'),
+    machineLabel: document.getElementById('machine-label'),
   };
 
   // pendingOp: 'add' | 'subtract' — เลือก sign ก่อนกดยืนยัน (default 'add')
@@ -58,6 +59,11 @@
 
   // ===== Render =====
   function renderState(s) {
+    if (s.machineInfo && els.machineLabel) {
+      els.machineLabel.textContent = `${s.machineInfo.branch} / ${s.machineInfo.name}`;
+      document.title = `${s.machineInfo.branch} / ${s.machineInfo.name} — Admin`;
+    }
+
     els.stateBadge.textContent = s.state;
     els.stateBadge.className = `state-badge state-${s.state} ml-3`;
 

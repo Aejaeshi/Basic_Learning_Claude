@@ -53,7 +53,10 @@
   <header class="px-8 py-4 flex justify-between items-center border-b border-white/10">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-full bg-yellow-400 grid place-items-center text-slate-900 font-black text-xl">฿</div>
-      <h1 class="text-2xl font-bold">ตู้แลกเหรียญ <span class="text-yellow-400">10 บาท</span></h1>
+      <div>
+        <h1 class="text-2xl font-bold leading-tight">ตู้แลกเหรียญ <span class="text-yellow-400">10 บาท</span></h1>
+        <div id="machine-label" class="text-xs text-slate-500">—</div>
+      </div>
     </div>
     <div class="flex items-center gap-4">
       <div id="conn-pill" class="status-pill px-3 py-1 rounded-full text-sm font-medium bg-slate-700 text-slate-300">
@@ -73,7 +76,7 @@
     <section data-scene="idle" class="scene text-center max-w-3xl">
       <div class="text-9xl mb-8 breathe">💵</div>
       <h2 class="text-6xl font-bold mb-4">ใส่ธนบัตรเพื่อแลกเหรียญ</h2>
-      <p class="text-2xl text-slate-300 mb-12">รับแบงค์ <span class="text-yellow-400 font-bold">20 / 50 / 100 / 500 / 1000</span></p>
+      <p class="text-2xl text-slate-300 mb-12">รับแบงค์ <span id="accepted-denoms" class="text-yellow-400 font-bold">—</span></p>
       <div class="flex justify-center gap-6 mb-12">
         <div class="w-20 h-20 rounded-full bg-yellow-400 text-slate-900 grid place-items-center text-3xl font-black coin-spin">฿10</div>
         <div class="w-20 h-20 rounded-full bg-yellow-400 text-slate-900 grid place-items-center text-3xl font-black coin-spin" style="animation-delay: 0.3s">฿10</div>
