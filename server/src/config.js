@@ -1,8 +1,40 @@
 import 'dotenv/config';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
 function num(v, fallback) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+/**
+ * resolveMachineId — กลไก auto-provisioning
+ *   1. ถ้า MACHINE_ID ใน .env → ใช้
+ *   2. ถ้าไม่มี → อ่านจาก data/machine-id (persistent file)
+ *   3. ถ้าไฟล์ไม่มี → gen UUID ใหม่ + เขียนลงไฟล์ (ครั้งเดียวตลอดอายุตู้)
+ *
+ * จุดประสงค์: ตู้มี ID เฉพาะตัวที่ไม่เคยซ้ำกับใคร ใช้เป็น key ตอน central
+ * dashboard discovery หรือ multi-machine analytics — โดยเจ้าของไม่ต้องทำอะไร
+ */
+function resolveMachineId() {
+  if (process.env.MACHINE_ID) return process.env.MACHINE_ID.trim();
+  const dbPath = process.env.DB_PATH || './data/coin.db';
+  const idFile = path.join(path.dirname(dbPath), 'machine-id');
+  try {
+    if (fs.existsSync(idFile)) {
+      const id = fs.readFileSync(idFile, 'utf8').trim();
+      if (id) return id;
+    }
+  } catch { /* fallthrough to gen */ }
+  const id = crypto.randomUUID();
+  try {
+    fs.mkdirSync(path.dirname(idFile), { recursive: true });
+    fs.writeFileSync(idFile, id);
+  } catch (err) {
+    console.warn(`⚠️  เขียน machine-id ไม่ได้ (${err.message}) — ใช้ ephemeral UUID`);
+  }
+  return id;
 }
 
 export const config = {
@@ -10,7 +42,9 @@ export const config = {
   isProduction: process.env.NODE_ENV === 'production',
 
   // ตัวตนของตู้เครื่องนี้ — แสดงบน UI + ขึ้น Discord embed
+  // id = key เครื่อง (UUID, ห้ามเปลี่ยน), name/branch = label คน
   machine: {
+    id:     resolveMachineId(),
     name:   process.env.MACHINE_NAME || 'machine-01',
     branch: process.env.BRANCH_NAME  || 'default',
   },

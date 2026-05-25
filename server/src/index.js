@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config, validateConfig } from './config.js';
@@ -98,6 +99,30 @@ app.get('/health', (req, res) => {
     machine_state: machine.state,
     coin_count: coins.current(),
     machine_disabled: settings.getBool('machine_disabled'),
+  });
+});
+
+// Public — เปิดให้ central dashboard (อนาคต) discover ตู้นี้ได้โดยไม่ต้อง login
+// ห้าม return อะไรที่เป็น secret — เปิด public ทั้ง LAN
+const SERVER_STARTED_AT = Date.now();
+let PKG_VERSION = 'unknown';
+try {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  PKG_VERSION = pkg.version || 'unknown';
+} catch { /* ignore */ }
+
+app.get('/api/machine-info', (req, res) => {
+  res.json({
+    id:             config.machine.id,
+    name:           config.machine.name,
+    branch:         config.machine.branch,
+    version:        PKG_VERSION,
+    state:          machine.state,
+    esp32Connected: esp32.connected,
+    coinCount:      coins.current(),
+    machineDisabled: settings.getBool('machine_disabled'),
+    startedAt:      SERVER_STARTED_AT,
+    uptime:         Date.now() - SERVER_STARTED_AT,
   });
 });
 
