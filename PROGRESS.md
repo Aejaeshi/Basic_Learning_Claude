@@ -28,7 +28,13 @@
 - [x] `server/src/ws.js` — WebSocket broadcast state changes
 
 ### Phase 2 — Customer UI
-- [x] `server/public/customer/{index,app}.{html,js}` — kiosk display (basic)
+- [x] `server/public/customer/{index,app}.{html,js}` — kiosk display
+  - 7 scenes: idle / receiving / dispensing / completed / error / disabled / offline
+  - Animations: coin-spin, coin-drop, breathe (idle), flash (number change)
+  - Progress bar, status pill, connection indicator
+  - WebSocket-driven live state updates
+  - ⚠️ `#coin-rain` container อยู่ใน HTML แต่ JS ยังไม่ push coin elements
+    → ตอน dispensing animation ไม่ขึ้น (ต้องเพิ่มใน `customer/app.js`)
 
 ### Phase 3 — Admin dashboard + Auth ⭐
 - [x] `server/src/auth.js` — bcrypt verify + session + rate-limit
@@ -101,8 +107,12 @@
 
 ### 🔧 งานเล็กๆ (เก็บกวาด)
 
+- [ ] **Coin rain animation** — JS push DOM elements ใน `#coin-rain` ตอน DISPENSING
+- [ ] **Automated tests** — ตอนนี้ไม่มี test suite เลย (`server/package.json` ไม่มี script `test`,
+      ไม่มี folder `test/` หรือ `__tests__/`)
+      - แนะนำ: เริ่มจาก unit test ของ `machine.js` (state transitions, error paths)
+      - และ integration test ของ `routes/admin.js` (ผ่าน supertest)
 - [ ] Discord notification: option mute ESP32 events ใน dev mode (ตอนนี้ส่งทุก restart)
-- [ ] หน้าจอลูกค้า: improve UI (ตอนนี้ basic)
 - [ ] Export CSV / charts รายวันใน admin
 - [ ] HTTPS (สำคัญตอน production — ตอนนี้ password ส่ง plain ใน LAN)
 - [ ] Static IP (DHCP reservation ใน router) — ตอนนี้ใช้ 192.168.1.6 อาจเปลี่ยน
