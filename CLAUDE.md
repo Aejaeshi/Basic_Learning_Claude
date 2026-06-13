@@ -129,3 +129,21 @@ D:\Basic_Learning_Claude\
 5. **ถ้า PC ↔ ESP32 ขาดการสื่อสาร > 5 วินาที** → ESP32 ต้อง inhibit NK77 และหยุด hopper ทันที
 6. **อธิบายโค้ดให้เข้าใจ** — เจ้าของโปรเจกต์อยากเรียนรู้ไปด้วย
 7. **ห้ามใช้ `delay()` blocking ใน firmware** — ใช้ `millis()` non-blocking pattern
+
+---
+
+## Response Style
+- **Strictly Concise**: Provide short, direct answers. Avoid introductory or concluding pleasantries.
+- **Code-First**: Show working code snippets immediately. Explain only critical logic.
+- **No Fluff**: Skip generic explanations of ESP32 or basic C++ programming.
+
+## Project Context
+- **Hardware**: ESP32 Development Board.
+- **Application**: Coin Changer Machine (ตู้แลกเหรียญ).
+- **Language/Framework**: Arduino framework (C++).
+
+## Coding Standards
+- Use non-blocking code (`millis()` instead of `delay()`) for loop execution.
+- Use `volatile` and IRAM_ATTR for interrupt service routines (ISR) handling coin slots.
+- Implement hardware debouncing or software delays to prevent double-counting.
+- Use explicit pin definitions at the top of the file.
